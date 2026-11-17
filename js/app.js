@@ -84,8 +84,8 @@
     });
     s += "</svg>";
     var legend = '<ul class="legend">' + mat.series.map(function (se, si) { return '<li><span class="sw" style="background:' + COLORS[si % COLORS.length] + '"></span>' + se.name + '</li>'; }).join("") + "</ul>";
-    var table = '<details class="tbl"><summary>Показать данные таблицей</summary><table class="mini"><tr><th>Вариант ответа</th>' + mat.groups.map(function (g) { return "<th>" + g + "</th>"; }).join("") + "</tr>" +
-      mat.series.map(function (se) { return "<tr><td>" + se.name + "</td>" + se.values.map(function (v) { return "<td>" + v + mat.unit + "</td>"; }).join("") + "</tr>"; }).join("") + "</table></details>";
+    var table = '<details class="tbl"><summary>Показать данные таблицей</summary><div class="scrollx" tabindex="0" role="region" aria-label="Данные диаграммы"><table class="mini"><tr><th>Вариант ответа</th>' + mat.groups.map(function (g) { return "<th>" + g + "</th>"; }).join("") + "</tr>" +
+      mat.series.map(function (se) { return "<tr><td>" + se.name + "</td>" + se.values.map(function (v) { return "<td>" + v + mat.unit + "</td>"; }).join("") + "</tr>"; }).join("") + "</table></div></details>";
     return h("figure", { class: "chartbox", html: s + legend + table });
   }
 
@@ -131,11 +131,19 @@
     function changed() { if (opts.onChange) opts.onChange(get()); }
 
     if (meta.answer === "digit") {
-      var list = h("ol", { class: "opts" });
-      t.options.forEach(function (o, i) { list.appendChild(h("li", { html: o })); });
+      var optBtns = [];
+      var list = h("ol", { class: "opts pick" });
+      t.options.forEach(function (o, i) {
+        var b = h("button", { type: "button", class: "opt", "aria-pressed": "false", onclick: function () { inp.value = String(i + 1); mark(); changed(); } },
+          [h("span", { class: "onum", text: (i + 1) + ")" }), h("span", { class: "otxt", html: o })]);
+        optBtns.push(b); list.appendChild(h("li", {}, [b]));
+      });
       box.appendChild(list);
-      var inp = h("input", { class: "ans one", inputmode: "numeric", maxlength: "3", autocomplete: "off", "aria-label": "Ответ: номер верного варианта", oninput: changed });
+      var inp = h("input", { class: "ans one", inputmode: "numeric", maxlength: "3", autocomplete: "off", "aria-label": "Ответ: номер верного варианта", oninput: function () { mark(); changed(); } });
+      function mark() { optBtns.forEach(function (b, i) { b.setAttribute("aria-pressed", inp.value.trim() === String(i + 1) ? "true" : "false"); }); }
       if (saved) inp.value = saved;
+      mark();
+      box.appendChild(h("p", { class: "ohint", text: "Нажми на верный вариант или впиши его номер." }));
       box.appendChild(h("label", { class: "ansrow" }, [h("span", { text: "Ответ:" }), inp]));
       get = function () { return inp.value; };
     } else if (meta.answer === "word") {
@@ -144,10 +152,35 @@
       box.appendChild(h("label", { class: "ansrow" }, [h("span", { text: "Ответ:" }), w]));
       get = function () { return w.value; };
     } else if (meta.answer === "cols") {
-      var ol = h("ol", { class: "opts" }); t.options.forEach(function (o) { ol.appendChild(h("li", { html: o })); }); box.appendChild(ol);
-      var a1 = h("input", { class: "ans cols", inputmode: "numeric", autocomplete: "off", oninput: changed });
-      var a2 = h("input", { class: "ans cols", inputmode: "numeric", autocomplete: "off", oninput: changed });
+      var colBtns = [];
+      var ol = h("ol", { class: "opts pick" });
+      t.options.forEach(function (o, i) {
+        var b = h("button", { type: "button", class: "opt", onclick: function () { cycle(String(i + 1)); } },
+          [h("span", { class: "onum", text: (i + 1) + ")" }), h("span", { class: "otxt", html: o }), h("span", { class: "otag" })]);
+        colBtns.push(b); ol.appendChild(h("li", {}, [b]));
+      });
+      box.appendChild(ol);
+      box.appendChild(h("p", { class: "ohint", text: "Нажимай на варианты: 1-е нажатие — «сходство», 2-е — «различие», 3-е — убрать. Или впиши номера в поля." }));
+      var a1 = h("input", { class: "ans cols", inputmode: "numeric", autocomplete: "off", "aria-label": "Черты сходства", oninput: function () { tag(); changed(); } });
+      var a2 = h("input", { class: "ans cols", inputmode: "numeric", autocomplete: "off", "aria-label": "Черты различия", oninput: function () { tag(); changed(); } });
+      function sortd(v) { return v.split("").filter(function (c, i, a) { return /\d/.test(c) && a.indexOf(c) === i; }).sort().join(""); }
+      function cycle(d) {
+        var inS = a1.value.indexOf(d) >= 0, inD = a2.value.indexOf(d) >= 0;
+        a1.value = sortd(a1.value.split(d).join("")); a2.value = sortd(a2.value.split(d).join(""));
+        if (!inS && !inD) a1.value = sortd(a1.value + d);
+        else if (inS) a2.value = sortd(a2.value + d);
+        tag(); changed();
+      }
+      function tag() {
+        colBtns.forEach(function (b, i) {
+          var d = String(i + 1), s = a1.value.indexOf(d) >= 0, df = a2.value.indexOf(d) >= 0;
+          b.className = "opt" + (s ? " sim" : df ? " diff" : "");
+          b.querySelector(".otag").textContent = s ? "сходство" : df ? "различие" : "";
+          b.setAttribute("aria-label", d + ") " + b.querySelector(".otxt").textContent + (s ? " — сходство" : df ? " — различие" : ""));
+        });
+      }
       if (saved) { a1.value = saved.sim || ""; a2.value = saved.diff || ""; }
+      tag();
       box.appendChild(h("div", { class: "colsrow" }, [
         h("label", {}, [h("span", { text: "Черты сходства" }), a1]),
         h("label", {}, [h("span", { text: "Черты различия" }), a2])
