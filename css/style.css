@@ -155,3 +155,8 @@ svg.chart .grid{stroke:#e3e7ee}svg.chart .ax,svg.chart .grp{font-size:12px;fill:
 .vargrid .varcard{display:flex;flex-direction:column}.vargrid .varcard h2{margin-top:.2em}.vargrid .varcard p:last-child{margin-top:auto;margin-bottom:4px}
 .stattbl{width:100%}.stattbl td:nth-child(2){text-align:left}
 @media(max-width:600px){.stattbl{font-size:.85rem}.stattbl th,.stattbl td{padding:5px 4px}}
+/* шапка не прилипает к верху при прокрутке */
+.top{position:static}
+.timer{top:8px}
+@media(max-width:600px){.timer{top:8px}}
+.libsec{scroll-margin-top:12px}
