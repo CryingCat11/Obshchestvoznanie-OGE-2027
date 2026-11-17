@@ -567,12 +567,43 @@
     return OGE.VARIANTS[0];
   }
 
+  /* «Все темы»: каждый раз новый набор; в варианте темы (элементы кодификатора) не повторяются,
+     а в первую очередь попадают задания и темы, которые ещё не решались. */
+  function mixVariant() {
+    var seenCode = {};
+    Object.keys(P.att).forEach(function (id) { var t = OGE.BANK.filter(function (x) { return x.id === id; })[0]; if (t) seenCode[t.code] = (seenCode[t.code] || 0) + 1; });
+    function cost(t, codes) {
+      return (P.att[t.id] ? 4 : 0) + Math.min(seenCode[t.code] || 0, 3) + (codes[t.code] ? 10 : 0) + Math.random() * 2.5;
+    }
+    var best = null;
+    for (var attempt = 0; attempt < 40; attempt++) {
+      var used = {}, codes = {}, ids = [], total = 0, ok = true;
+      var texts = shuffle(Object.keys(OGE.TEXTS)).map(function (id) {
+        var ts = OGE.BANK.filter(function (t) { return t.textId === id; });
+        return { id: id, c: ts.reduce(function (s, t) { return s + (P.att[t.id] ? 1 : 0); }, 0) };
+      }).sort(function (a, b) { return a.c - b.c; });
+      var textId = texts[0].id;
+      for (var n = 1; n <= 20 && ok; n++) {
+        var pool = tasksOf(n).filter(function (t) { return !(t.facts || []).some(function (f) { return used[f]; }); });
+        if (n >= 18) pool = pool.filter(function (t) { return t.textId === textId; });
+        if (!pool.length) { ok = false; break; }
+        var scored = pool.map(function (t) { return { t: t, c: cost(t, n >= 18 ? {} : codes) }; }).sort(function (a, b) { return a.c - b.c; });
+        var t = scored[0].t; total += scored[0].c; ids.push(t.id);
+        (t.facts || []).forEach(function (f) { used[f] = 1; }); codes[t.code] = 1;
+      }
+      if (ok && (!best || total < best.total)) best = { total: total, ids: ids };
+    }
+    return best ? { id: "mix", title: "Случайный вариант: все темы", tasks: best.ids } : randomVariant();
+  }
+
   views.variants = function () {
     setTitle("Варианты");
     var root = h("div", {}, [h("h1", { text: "Варианты" }),
       h("p", { html: "<b>Экзамен</b> — 180 минут, проверка в конце, как на ОГЭ. <b>Тренировка</b> — проверка после каждого задания. Пробник на время советуем раз в 3–4 недели." })]);
     var vgrid = h("div", { class: "vargrid" }); root.appendChild(vgrid);
-    OGE.VARIANTS.concat([{ id: "random", title: "Случайный вариант", note: "Собирается из банка заданий по структуре демоверсии 2027; без повторов одного факта." }]).forEach(function (v) {
+    OGE.VARIANTS.concat([
+      { id: "random", title: "Случайный вариант", note: "Собирается из банка заданий по структуре демоверсии 2027; без повторов одного факта." },
+      { id: "mix", title: "Случайный вариант: все темы", note: "Каждый раз новый. Темы в варианте не повторяются, а в первую очередь попадаются задания и темы, которые ты ещё не решала. Так за несколько попыток проходится весь кодификатор." }]).forEach(function (v) {
       var hist = P.variants.filter(function (x) { return x.vid === v.id; });
       vgrid.appendChild(h("section", { class: "varcard" }, [
         h("h2", { text: v.title }), h("p", { class: "muted", text: v.note }),
@@ -588,6 +619,7 @@
     var v;
     if (draft && draft.vid === vid && draft.mode === mode && !draft.finished) v = { id: vid, title: draft.title, tasks: draft.tasks };
     else if (vid === "random") v = randomVariant();
+    else if (vid === "mix") v = mixVariant();
     else v = OGE.VARIANTS.filter(function (x) { return x.id === vid; })[0];
     if (!v) return notFound();
     if (!draft || draft.vid !== vid || draft.mode !== mode || draft.finished) {
