@@ -107,7 +107,9 @@ svg.chart .grid{stroke:#e3e7ee}svg.chart .ax,svg.chart .grp{font-size:12px;fill:
 .liblist{list-style:none;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px}
 .liblist a{display:block;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:9px 12px;text-decoration:none;color:var(--ink)}
 .liblist a:hover{border-color:var(--accent)}
-.lib .toc{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 12px 8px 30px}
+.lib .toc{display:flex;flex-wrap:wrap;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.lib .toc a{display:inline-block;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--bg,#fff);text-decoration:none;line-height:1.3}
+.lib .toc a:hover,.lib .toc a:focus-visible{border-color:currentColor;text-decoration:underline}
 .libsec{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:4px 16px 10px;margin:12px 0;scroll-margin-top:70px}
 .libsec:target{border-color:var(--accent)}
 .libsec table{border-collapse:collapse;width:100%;font-size:.95rem}.libsec td,.libsec th{border:1px solid var(--line);padding:5px 8px;vertical-align:top;text-align:left}
