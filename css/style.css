@@ -133,3 +133,5 @@ svg.chart .grid{stroke:#e3e7ee}svg.chart .ax,svg.chart .grp{font-size:12px;fill:
 @media print{.top,.foot,.actions,.nav{display:none}}
 .scrollx{overflow-x:auto;max-width:100%}.mini{font-size:.9rem}.mini th,.mini td{padding:5px 6px}
 .colsrow label{display:flex;flex-direction:column;gap:4px;margin:6px 0}
+.lib .mini{width:100%;font-size:.88rem}.lib .mini th,.lib .mini td{text-align:left;vertical-align:top;overflow-wrap:anywhere;hyphens:auto;-webkit-hyphens:auto}
+@media (max-width:600px){.lib .mini.cards,.lib .mini.cards tbody,.lib .mini.cards tr,.lib .mini.cards td{display:block;width:auto}.lib .mini.cards tr:first-child{display:none}.lib .mini.cards tr{border:1px solid var(--line);border-radius:8px;margin:8px 0;padding:4px 0}.lib .mini.cards td{border:0;padding:3px 10px}.lib .mini.cards td:first-child{font-weight:700}.lib .mini.cards td:not(:first-child)::before{content:attr(data-label) ": ";font-weight:600;color:var(--muted,#667)}}

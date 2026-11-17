@@ -505,7 +505,17 @@
     var toc = h("nav", { class: "toc", "aria-label": "Разделы конспекта" }, L.sections.map(function (s) { return h("a", { href: "#/library/" + n + "/" + s.id, text: s.h }); }));
     root.appendChild(toc);
     L.sections.forEach(function (s) {
-      root.appendChild(h("section", { id: "s-" + s.id, class: "libsec" + (anchor === s.id ? " target" : "") }, [h("h2", { text: s.h }), h("div", { html: s.html })]));
+      var body = h("div", { html: s.html });
+      // Таблицы из 3+ колонок на телефоне показываются карточками: подписываем ячейки заголовками колонок.
+      Array.prototype.forEach.call(body.querySelectorAll("table.mini"), function (tb) {
+        var head = tb.querySelectorAll("tr:first-child th");
+        if (head.length < 3) return;
+        tb.classList.add("cards");
+        Array.prototype.forEach.call(tb.querySelectorAll("tr"), function (tr) {
+          Array.prototype.forEach.call(tr.children, function (td, i) { if (td.tagName === "TD" && head[i]) td.setAttribute("data-label", head[i].textContent); });
+        });
+      });
+      root.appendChild(h("section", { id: "s-" + s.id, class: "libsec" + (anchor === s.id ? " target" : "") }, [h("h2", { text: s.h }), body]));
     });
     if (L.traps) root.appendChild(h("section", { class: "libsec traps" }, [h("h2", { text: "Ловушки" }), h("ul", {}, L.traps.map(function (x) { return h("li", { text: x }); }))]));
     root.appendChild(h("p", { class: "src", text: "Источник: " + L.src }));
