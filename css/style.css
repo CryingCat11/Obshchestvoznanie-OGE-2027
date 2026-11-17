@@ -107,7 +107,7 @@ svg.chart .grid{stroke:#e3e7ee}svg.chart .ax,svg.chart .grp{font-size:12px;fill:
 .badge{display:inline-block;font-size:.8rem;font-weight:700;padding:1px 8px;border-radius:20px}
 .badge.ok{background:var(--ok-bg);color:var(--ok)}.badge.part{background:var(--part-bg);color:var(--part)}.badge.bad{background:var(--bad-bg);color:var(--bad)}
 .tasklist{list-style:none;padding:0}.tasklist li{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line)}
-.stat,.total,.today,.count{font-weight:700}
+.total,.count{font-weight:700}
 .big{font-size:2rem;font-weight:800}
 .sc{font-weight:700}
 .results,.resblock{margin:12px 0}
@@ -135,3 +135,23 @@ svg.chart .grid{stroke:#e3e7ee}svg.chart .ax,svg.chart .grp{font-size:12px;fill:
 .colsrow label{display:flex;flex-direction:column;gap:4px;margin:6px 0}
 .lib .mini{width:100%;font-size:.88rem}.lib .mini th,.lib .mini td{text-align:left;vertical-align:top;overflow-wrap:anywhere;hyphens:auto;-webkit-hyphens:auto}
 @media (max-width:600px){.lib .mini.cards,.lib .mini.cards tbody,.lib .mini.cards tr,.lib .mini.cards td{display:block;width:auto}.lib .mini.cards tr:first-child{display:none}.lib .mini.cards tr{border:1px solid var(--line);border-radius:8px;margin:8px 0;padding:4px 0}.lib .mini.cards td{border:0;padding:3px 10px}.lib .mini.cards td:first-child{font-weight:700}.lib .mini.cards td:not(:first-child)::before{content:attr(data-label) ": ";font-weight:600;color:var(--muted,#667)}}
+
+/* планшеты и большие экраны: главная, сетки */
+.cards3{grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin:0 0 8px}
+.stat{display:flex;flex-direction:column;gap:2px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px}
+.stat b{font-size:1.6rem;line-height:1.1;font-weight:800}.stat span{color:var(--muted);font-size:.92rem}
+.today ul{padding-left:1.2em}.today li{margin:4px 0}
+.quick{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.quick .tile{height:100%}
+.numgrid{grid-template-columns:repeat(auto-fill,minmax(165px,1fr))}
+.numcard .num,.numcard .num.big{align-self:flex-start;font-size:1.15rem;width:2.4em;height:2.4em;min-width:0;flex:none}
+.numcard b{font-size:1rem;line-height:1.3;overflow-wrap:break-word}
+.numcard .bar{margin-top:auto}
+.liblist li{display:flex}.liblist a{flex:1}
+@media(min-width:900px){main,.foot{max-width:980px}}
+.cards3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:600px){.cards3{gap:8px}.stat{padding:10px}.stat b{font-size:1.25rem}.stat span{font-size:.8rem;line-height:1.25}}
+.vargrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:12px}
+.vargrid .varcard{display:flex;flex-direction:column}.vargrid .varcard h2{margin-top:.2em}.vargrid .varcard p:last-child{margin-top:auto;margin-bottom:4px}
+.stattbl{width:100%}.stattbl td:nth-child(2){text-align:left}
+@media(max-width:600px){.stattbl{font-size:.85rem}.stattbl th,.stattbl td{padding:5px 4px}}

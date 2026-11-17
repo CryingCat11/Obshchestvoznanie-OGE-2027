@@ -340,7 +340,7 @@
     var root = h("div");
     root.appendChild(h("section", { class: "hero" }, [
       h("h1", { text: "Тренажёр ОГЭ по обществознанию — 2027" }),
-      h("p", { html: "20 заданий, 32 балла, 180 минут — всё по демоверсии ФИПИ 2027. Решай задания по номерам, проходи варианты, а если ошиблась — открывай короткий конспект в Библиотеке." }),
+      h("p", { html: "20 заданий, 32 балла, 180 минут — всё по демоверсии ФИПИ 2027. Решай задания по номерам, проходи варианты, а если ошиблась — открывай конспект в Библиотеке." }),
       h("p", { class: "count", html: OGE.EXAM.examDate ? "" : "Дата ОГЭ-2027 ещё не объявлена — появится здесь, как только выйдет официальное расписание." })
     ]));
     // Общий прогресс
@@ -369,7 +369,7 @@
     root.appendChild(h("section", { class: "quick" }, [
       h("a", { class: "tile", href: "#/numbers" }, [h("b", { text: "Задания по номерам" }), h("span", { text: "№1–20, с проверкой и пояснениями" })]),
       h("a", { class: "tile", href: "#/variants" }, [h("b", { text: "Варианты" }), h("span", { text: "Пробник на 3 часа или тренировка" })]),
-      h("a", { class: "tile", href: "#/library" }, [h("b", { text: "Библиотека" }), h("span", { text: "Короткий конспект к каждому номеру" })]),
+      h("a", { class: "tile", href: "#/library" }, [h("b", { text: "Библиотека" }), h("span", { text: "Конспект и разбор к каждому номеру" })]),
       h("a", { class: "tile", href: "#/topics" }, [h("b", { text: "По темам" }), h("span", { text: "Разделы кодификатора ФИПИ" })])
     ]));
     return root;
@@ -486,7 +486,7 @@
   views.library = function () {
     setTitle("Библиотека");
     var root = h("div", {}, [h("h1", { text: "Библиотека" }),
-      h("p", { text: "Короткий конспект к каждому номеру: что проверяют, главное по теме и типичные ловушки. Определения — по учебнику «Обществознание. 9 класс» под ред. Д. А. Медведева (2026), формат — по демоверсии ФИПИ 2027." })]);
+      h("p", { text: "Конспект к каждому номеру: что проверяют, теория в таблицах, образцы ответов и типичные ловушки. Определения — по учебнику «Обществознание. 9 класс» под ред. Д. А. Медведева (2026), формат — по демоверсии ФИПИ 2027." })]);
     var ul = h("ul", { class: "liblist" });
     for (var n = 1; n <= 20; n++) ul.appendChild(h("li", {}, [h("a", { href: "#/library/" + n, text: OGE.LIBRARY[n].title })]));
     root.appendChild(ul);
@@ -571,9 +571,10 @@
     setTitle("Варианты");
     var root = h("div", {}, [h("h1", { text: "Варианты" }),
       h("p", { html: "<b>Экзамен</b> — 180 минут, проверка в конце, как на ОГЭ. <b>Тренировка</b> — проверка после каждого задания. Пробник на время советуем раз в 3–4 недели." })]);
+    var vgrid = h("div", { class: "vargrid" }); root.appendChild(vgrid);
     OGE.VARIANTS.concat([{ id: "random", title: "Случайный вариант", note: "Собирается из банка заданий по структуре демоверсии 2027; без повторов одного факта." }]).forEach(function (v) {
       var hist = P.variants.filter(function (x) { return x.vid === v.id; });
-      root.appendChild(h("section", { class: "varcard" }, [
+      vgrid.appendChild(h("section", { class: "varcard" }, [
         h("h2", { text: v.title }), h("p", { class: "muted", text: v.note }),
         hist.length ? h("p", { text: "Твои результаты: " + hist.map(function (x) { return x.score + "/32"; }).join(", ") }) : null,
         h("p", {}, [h("a", { class: "btn primary", href: "#/variant/" + v.id + "/exam", text: "Экзамен (180 мин)" }), document.createTextNode(" "), h("a", { class: "btn", href: "#/variant/" + v.id + "/train", text: "Тренировка" })])
