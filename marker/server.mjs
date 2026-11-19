@@ -135,7 +135,7 @@ async function tutor(request, response, path, search, isPost, loggedIn) {
   if (path === '/tutor/login') {
     if (!isPost) return loggedIn ? redirect(response, '/tutor') : html(response, ui.login());
     const form = await formBody(request);
-    if (!equal(sign('tutor-code', (form.get('code') ?? '').trim()), tutorId)) return html(response, ui.login('Код доступа не подошёл.'), 401);
+    if (!equal(sign('tutor-code', (form.get('code') ?? '').replace(/\s+/g, '')), tutorId)) return html(response, ui.login('Код доступа не подошёл.'), 401);
     return redirect(response, '/tutor', makeCookie('marker_tutor', session('tutor', tutorId, DAY * 7), DAY * 7));
   }
   if (!loggedIn) return redirect(response, '/tutor/login');
