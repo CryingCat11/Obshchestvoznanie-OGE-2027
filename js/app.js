@@ -32,6 +32,14 @@
     if (score < max) P.mistakes[task.id] = 1; else delete P.mistakes[task.id];
     persist();
   }
+  function firstAtt(id) { var a = P.att[id]; return a && a.length ? a[0] : null; }
+  // Пустой ли ответ (ничего не введено): такой ответ не проверяем и ключ не показываем
+  function isEmptyAns(ans) {
+    if (ans == null) return true;
+    if (typeof ans === "object") return Object.keys(ans).every(function (k) { return !String(ans[k] || "").trim(); });
+    return !String(ans).trim();
+  }
+  var INCOMPLETE = { "Заполнены не все буквы.": 1, "Заполни обе колонки.": 1 };
   function lastAtt(id) { var a = P.att[id]; return a && a.length ? a[a.length - 1] : null; }
 
   /* ---------------- Утилиты ---------------- */
@@ -58,20 +66,21 @@
 
   /* Статистика по номеру: по последней попытке каждого задания */
   function numStats(n) {
-    var list = tasksOf(n), done = 0, got = 0, max = 0;
-    list.forEach(function (t) { var a = lastAtt(t.id); if (a) { done++; got += a.s; max += a.m; } });
-    return { total: list.length, done: done, got: got, max: max, pct: max ? Math.round(100 * got / max) : null };
+    var list = tasksOf(n), done = 0, got = 0, max = 0, first = 0;
+    list.forEach(function (t) { var a = lastAtt(t.id); if (a) { done++; got += a.s; max += a.m; var f = firstAtt(t.id); if (f.s === f.m) first++; } });
+    return { total: list.length, done: done, got: got, max: max, pct: max ? Math.round(100 * got / max) : null, first: first, firstPct: done ? Math.round(100 * first / done) : null };
   }
 
   /* ---------------- Диаграмма (SVG) ---------------- */
   var COLORS = ["#1f4e9c", "#e07a1f", "#2e8b57", "#9b3fb5", "#c23b3b", "#5b6b7a"];
   function chart(mat) {
-    var W = 640, H = 300, L = 40, B = 34, T = 14, R = 10;
+    var narrow = (window.innerWidth || 800) < 600;
+    var W = narrow ? 380 : 640, H = narrow ? 280 : 300, L = narrow ? 30 : 40, B = 34, T = 18, R = 6;
     var all = []; mat.series.forEach(function (s) { all = all.concat(s.values); });
     var top = Math.max(10, Math.ceil(Math.max.apply(null, all) / 10) * 10);
-    var gw = (W - L - R) / mat.groups.length, bw = Math.min(34, (gw - 30) / mat.series.length);
+    var gw = (W - L - R) / mat.groups.length, bw = Math.min(34, (gw - (narrow ? 16 : 30)) / mat.series.length);
     var y = function (v) { return T + (H - T - B) * (1 - v / top); };
-    var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Диаграмма: результаты опроса" class="chart">';
+    var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Диаграмма: результаты опроса" class="chart' + (narrow ? " narrow" : "") + '">';
     for (var v = 0; v <= top; v += 10) s += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(v) + '" y2="' + y(v) + '" class="grid"/><text x="' + (L - 6) + '" y="' + (y(v) + 4) + '" class="ax" text-anchor="end">' + v + '</text>';
     mat.groups.forEach(function (g, gi) {
       var x0 = L + gi * gw + (gw - bw * mat.series.length) / 2;
@@ -219,8 +228,25 @@
 
     if (opts.mode === "train") {
       var out = h("div", { class: "feedback", "aria-live": "polite" });
-      var btn = h("button", { class: "btn primary", text: meta.answer === "open" ? "Проверить и сверить с эталоном" : "Проверить", onclick: function () {
+      var btnText = meta.answer === "open" ? "Проверить и сверить с эталоном" : "Проверить", warned = false;
+      var resetWarn = function () { if (warned) { warned = false; btn.textContent = btnText; } };
+      box.addEventListener("input", resetWarn);
+      box.addEventListener("click", function (e) { if (e.target.closest && e.target.closest(".opt")) resetWarn(); });
+      var btn = h("button", { class: "btn primary", text: btnText, onclick: function () {
         out.innerHTML = "";
+        if (isEmptyAns(get())) {
+          out.appendChild(h("p", { class: "warn", text: "Сначала впиши ответ — пустой ответ не проверяем, и правильный ответ пока не показываем." }));
+          return;
+        }
+        if (meta.answer !== "open" && !warned) {
+          var pre = C.checkShort(t, get());
+          if (INCOMPLETE[pre.formatError]) {
+            warned = true; btn.textContent = "Всё равно проверить";
+            out.appendChild(h("p", { class: "warn", text: "⚠ " + pre.formatError + " Допиши ответ или нажми «Всё равно проверить»." }));
+            return;
+          }
+        }
+        warned = false; btn.textContent = btnText;
         if (meta.answer === "open") out.appendChild(openReview(t, get(), function (score, flags) {
           record(t, score, meta.pts, "train", get());
           if (opts.onDone) opts.onDone(score);
@@ -293,7 +319,7 @@
     var flags = C.autoOpen(t, ans);
     var wrap = h("div", { class: "review" });
     var empty = Object.keys(ans).every(function (k) { return !String(ans[k]).trim(); });
-    if (empty) { wrap.appendChild(h("p", { class: "warn", text: "Ответ пустой — 0 баллов. Напиши ответ и проверь ещё раз." })); onSave && onSave(0, flags); return wrap; }
+    if (empty) { wrap.appendChild(h("p", { class: "warn", text: "Ответ пустой — 0 баллов. Напиши ответ и проверь ещё раз." })); return wrap; }
 
     var scoreEl = h("p", { class: "verdict" });
     var list = h("ul", { class: "elist" });
@@ -622,6 +648,13 @@
     else if (vid === "mix") v = mixVariant();
     else v = OGE.VARIANTS.filter(function (x) { return x.id === vid; })[0];
     if (!v) return notFound();
+    if (draft && draft.vid === vid && draft.mode === "exam" && mode === "exam" && draft.finished && !draft.saved) {
+      // Экзамен завершён, но результат ещё не сохранён: после перезагрузки или «Назад» показываем его снова
+      var vr = { id: vid, title: draft.title, tasks: draft.tasks };
+      setTitle("Результат: " + vr.title);
+      setTimeout(function () { finishExam(vr, draft.tasks.filter(function (id) { return BYID[id]; }).map(function (id) { return { t: BYID[id] }; }), draft); }, 0);
+      return h("div", { class: "results" }, [h("p", { text: "Загружаю результат…" })]);
+    }
     if (!draft || draft.vid !== vid || draft.mode !== mode || draft.finished) {
       draft = { vid: vid, mode: mode, title: v.title, tasks: v.tasks, ans: {}, start: Date.now(), finished: false };
       save(DRAFT, draft);
@@ -659,11 +692,26 @@
       root.appendChild(tv);
     });
     if (mode === "exam") {
-      root.appendChild(h("div", { class: "actions sticky" }, [h("button", { class: "btn primary", text: "Завершить и проверить", onclick: function () {
+      var doFinish = function () {
         if (tick) clearInterval(tick);
         draft.finished = true; draft.dur = Date.now() - draft.start; save(DRAFT, draft);
         finishExam(v, views_, draft);
-      } })]));
+      };
+      var confirmBox = h("div", { class: "confirm", role: "alertdialog", "aria-live": "polite", hidden: "" });
+      var finishBtn = h("button", { class: "btn primary", text: "Завершить и проверить", onclick: function () {
+        var empty = views_.filter(function (x) { return isEmptyAns(draft.ans[x.t.id]); }).map(function (x) { return x.t.n; });
+        confirmBox.innerHTML = "";
+        confirmBox.appendChild(h("p", { html: empty.length
+          ? "<b>Без ответа: " + empty.length + "</b> (" + empty.map(function (n) { return "№" + n; }).join(", ") + "). После завершения ответы уже не изменить."
+          : "Все задания с ответом. После завершения ответы уже не изменить." }));
+        confirmBox.appendChild(h("div", { class: "actions" }, [
+          h("button", { class: "btn primary", text: "Да, завершить", onclick: doFinish }),
+          h("button", { class: "btn", text: "Вернуться к заданиям", onclick: function () { confirmBox.hidden = true; finishBtn.hidden = false; finishBtn.focus(); } })
+        ]));
+        confirmBox.hidden = false; finishBtn.hidden = true;
+        confirmBox.querySelector("button").focus();
+      } });
+      root.appendChild(h("div", { class: "actions sticky" }, [finishBtn, confirmBox]));
     } else {
       root.appendChild(h("div", { class: "actions" }, [h("button", { class: "btn primary", text: "Сохранить результат тренировки", onclick: function () {
         var total = 0, per = {};
@@ -681,6 +729,7 @@
     $app.innerHTML = "";
     window.scrollTo(0, 0);
     var root = h("div", { class: "results" }, [h("h1", { text: "Результат: " + v.title })]);
+    root.appendChild(h("p", { class: "info", text: "Результат не пропадёт при перезагрузке страницы, пока ты его не сохранишь или не начнёшь вариант заново." }));
     var totalEl = h("p", { class: "total" });
     root.appendChild(totalEl);
     root.appendChild(h("p", { class: "hint", html: "Задания с кратким ответом проверены автоматически. Развёрнутые (1, 7, 8, 12, 17–20) система оценила по ключевым словам — <b>сверь каждое с эталоном</b> и поправь галочки, если нужно, затем нажми «Сохранить результат»." }));
@@ -724,12 +773,17 @@
         record(x.t, s, m, "exam", draft.ans[x.t.id]);
       });
       P.variants.push({ vid: v.id, title: v.title, date: Date.now(), score: tot, per: per, mode: "exam", dur: draft.dur, tasks: v.tasks });
-      persist(); save(DRAFT, null);
+      persist(); draft.saved = true; save(DRAFT, null);
+      restartBtn.hidden = true;
       saveBtn.disabled = true; saveBtn.textContent = "Сохранено ✓";
       saved.innerHTML = ' Результат в <a href="#/stats">Статистике</a>.';
     } });
     var saved = h("span");
-    root.appendChild(h("div", { class: "actions" }, [saveBtn, saved]));
+    var restartBtn = h("button", { class: "btn", text: "Не сохранять и начать заново", onclick: function () {
+      if (restartBtn.getAttribute("data-sure")) { save(DRAFT, null); location.hash = "#/variants"; return; }
+      restartBtn.setAttribute("data-sure", "1"); restartBtn.textContent = "Точно? Результат пропадёт — нажми ещё раз";
+    } });
+    root.appendChild(h("div", { class: "actions" }, [saveBtn, saved, restartBtn]));
     root.appendChild(details);
     root.appendChild(h("div", { class: "actions" }, [saveBtn.cloneNode(true)]));
     root.lastChild.firstChild.addEventListener("click", function () { saveBtn.click(); });
@@ -742,15 +796,17 @@
   views.stats = function () {
     setTitle("Статистика");
     var root = h("div", {}, [h("h1", { text: "Статистика" })]);
-    var tbl = h("table", { class: "stattbl" }, [h("tr", {}, ["№", "Тип", "Решено", "Баллы", "%"].map(function (x) { return h("th", { text: x }); }))]);
+    var tbl = h("table", { class: "stattbl" }, [h("tr", {}, ["№", "Тип", "Решено", "Баллы", "%", "С 1-го раза"].map(function (x) { return h("th", { text: x }); }))]);
     for (var n = 1; n <= 20; n++) {
       var st = numStats(n);
       tbl.appendChild(h("tr", { class: st.pct == null ? "" : st.pct >= 80 ? "good" : st.pct >= 50 ? "mid" : "low" }, [
         h("td", {}, [h("a", { href: "#/n/" + n, text: String(n) })]), h("td", { text: OGE.NUMBERS[n].title }),
-        h("td", { text: st.done + "/" + st.total }), h("td", { text: st.max ? st.got + "/" + st.max : "—" }), h("td", { text: st.pct == null ? "—" : st.pct + " %" })
+        h("td", { text: st.done + "/" + st.total }), h("td", { text: st.max ? st.got + "/" + st.max : "—" }), h("td", { text: st.pct == null ? "—" : st.pct + " %" }),
+        h("td", { text: st.firstPct == null ? "—" : st.first + " из " + st.done })
       ]));
     }
     root.appendChild(h("h2", { text: "По номерам заданий" }));
+    root.appendChild(h("p", { class: "hint", text: "«Баллы» и «%» — по последней попытке. «С 1-го раза» — сколько заданий ты решила на полный балл с первой попытки: так видно, что уже получается на экзамене без подсказки." }));
     root.appendChild(h("div", { class: "scroll" }, [tbl]));
     // По разделам
     root.appendChild(h("h2", { text: "По разделам" }));
