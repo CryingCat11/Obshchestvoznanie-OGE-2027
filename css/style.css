@@ -160,3 +160,11 @@ svg.chart .grid{stroke:#e3e7ee}svg.chart .ax,svg.chart .grp{font-size:12px;fill:
 .timer{top:8px}
 @media(max-width:600px){.timer{top:8px}}
 .libsec{scroll-margin-top:12px}
+/* UX-правки 2026-11-19: подтверждение завершения, читаемая диаграмма на телефоне */
+.confirm{flex-basis:100%;background:var(--card);border:2px solid var(--accent);border-radius:var(--r);padding:10px 14px}
+.confirm p{margin:.2em 0 .4em}
+svg.chart.narrow .ax{font-size:13px}svg.chart.narrow .grp{font-size:14px}svg.chart.narrow .val{font-size:13px;font-weight:600}
+svg.chart .val{font-weight:600}
+.tbl summary{display:inline-block;padding:8px 0;min-height:44px;font-size:.95rem}
+[hidden]{display:none!important}
+figure.chartbox{margin:10px 0}
